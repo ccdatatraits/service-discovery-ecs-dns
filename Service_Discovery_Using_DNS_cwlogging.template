@@ -581,22 +581,6 @@
                         ],
                         "Essential": true,
                         "Environment": [
-                            {
-                                "Name": "CALC_USERNAME",
-                                "Value": "admin"
-                            },
-                            {
-                                "Name": "CALC_PASSWORD",
-                                "Value": "password"
-                            },
-                            {
-                                "Name": "TIME_USERNAME",
-                                "Value": "admin"
-                            },
-                            {
-                                "Name": "TIME_PASSWORD",
-                                "Value": "password"
-                            }
                         ]
                     }
                 ]
