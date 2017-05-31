@@ -531,7 +531,7 @@
             "Properties" : {
                 "ContainerDefinitions": [
                     {
-                        "Name": "logstreamer-service",
+                        "Name": "log-streamer-service",
                         "Image": { "Fn::Join" : ["", [
                             { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/log-streamer-service:latest"
                         ]]},

@@ -386,16 +386,10 @@
             "Type": "AWS::ECS::Cluster",
             "DependsOn" : "HostedZone"
         },
-        "TimeRepository": {
+        "LogStreamerRepository": {
             "Type" : "AWS::ECR::Repository",
             "Properties" : {
-                "RepositoryName" : "time-demo-service"
-            }
-        },
-        "CalcRepository": {
-            "Type" : "AWS::ECR::Repository",
-            "Properties" : {
-                "RepositoryName" : "calc-demo-service"
+                "RepositoryName" : "log-streamer-service"
             }
         },
         "PortalRepository": {
@@ -417,7 +411,7 @@
         },
         "DockerBuilder": {
             "Type": "AWS::EC2::Instance",
-            "DependsOn": [ "TimeRepository", "CalcRepository", "PortalRepository" ],
+            "DependsOn": [ "LogStreamerRepository", "PortalRepository" ],
             "Properties": {
                 "KeyName": { "Ref": "KeyName" },
                 "ImageId": { "Fn::FindInMap" : [ "AmazonLinuxAMI", { "Ref" : "AWS::Region" }, "AMI" ] },
@@ -434,13 +428,11 @@
                     "yum install -y aws-cfn-bootstrap\n",
                     "yum update -y aws-cfn-bootstrap\n",
                     "yum install -y git aws-cli\n",
-                    "git clone https://github.com/awslabs/service-discovery-ecs-dns.git\n",
+                    "git clone https://github.com/ccdatatraits/service-discovery-ecs-dns.git\n",
                     "$(aws ecr get-login --region ", { "Ref": "AWS::Region" }, ")\n",
-                    "docker build -t ", { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/time-demo-service service-discovery-ecs-dns/microservice-apps/time\n",
-                    "docker build -t ", { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/calc-demo-service service-discovery-ecs-dns/microservice-apps/calc\n",
+                    "docker build -t ", { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/log-streamer-service service-discovery-ecs-dns/microservice-apps/log-streamer\n",
                     "docker build -t ", { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/portal-demo-service service-discovery-ecs-dns/microservice-apps/portal\n",
-                    "docker push ", { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/time-demo-service\n",
-                    "docker push ", { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/calc-demo-service\n",
+                    "docker push ", { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/log-streamer-service\n",
                     "docker push ", { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/portal-demo-service\n",
                     "/opt/aws/bin/cfn-signal -e 0 -r \"Build Process Complete\" '", { "Ref" : "DockerBuildWaitHandle" }, "'\n"
                 ]]}},
@@ -450,15 +442,15 @@
                 ]
             }
         },
-        "TimeDefinition": {
+        "LogStreamerDefinition": {
             "Type" : "AWS::ECS::TaskDefinition",
             "DependsOn": "DockerBuildWaitCondition",
             "Properties" : {
                 "ContainerDefinitions": [
                     {
-                        "Name": "time-service",
+                        "Name": "log-streamer-service",
                         "Image": { "Fn::Join" : ["", [
-                            { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/time-demo-service:latest"
+                            { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/log-streamer-service:latest"
                         ]]},
                         "Cpu": "100",
                         "Memory": "100",
@@ -470,72 +462,20 @@
                         "Essential": true,
                         "Environment": [
                             {
-                                "Name": "TIME_USERNAME",
-                                "Value": "admin"
-                            },
-                            {
-                                "Name": "TIME_PASSWORD",
-                                "Value": "password"
-                            },
-                            {
                                 "Name": "SERVICE_8081_NAME",
-                                "Value": "time"
+                                "Value": "log-streamer"
                             }
                         ]
                     }
                 ]
             }
         },
-        "TimeService": {
+        "LogStreamerService": {
             "Type" : "AWS::ECS::Service",
             "Properties": {
                 "Cluster": {"Ref": "ECSCluster"},
                 "DesiredCount": 2,
-                "TaskDefinition": {"Ref": "TimeDefinition"}
-            }
-        },
-        "CalcDefinition": {
-            "Type" : "AWS::ECS::TaskDefinition",
-            "DependsOn": "DockerBuildWaitCondition",
-            "Properties" : {
-                "ContainerDefinitions": [
-                    {
-                        "Name": "calc-service",
-                        "Image": { "Fn::Join" : ["", [
-                            { "Ref" : "AWS::AccountId" }, ".dkr.ecr.", { "Ref": "AWS::Region" }, ".amazonaws.com/calc-demo-service:latest"
-                        ]]},
-                        "Cpu": "100",
-                        "Memory": "100",
-                        "PortMappings": [
-                            {
-                                "ContainerPort": 8081
-                            }
-                        ],
-                        "Essential": true,
-                        "Environment": [
-                            {
-                                "Name": "CALC_USERNAME",
-                                "Value": "admin"
-                            },
-                            {
-                                "Name": "CALC_PASSWORD",
-                                "Value": "password"
-                            },
-                            {
-                                "Name": "SERVICE_8081_NAME",
-                                "Value": "calc"
-                            }
-                        ]
-                    }
-                ]
-            }
-        },
-        "CalcService": {
-            "Type" : "AWS::ECS::Service",
-            "Properties": {
-                "Cluster": {"Ref": "ECSCluster"},
-                "DesiredCount": 2,
-                "TaskDefinition": {"Ref": "CalcDefinition"}
+                "TaskDefinition": {"Ref": "LogStreamerDefinition"}
             }
         },
         "PortalDefinition": {
@@ -558,22 +498,6 @@
                         ],
                         "Essential": true,
                         "Environment": [
-                            {
-                                "Name": "CALC_USERNAME",
-                                "Value": "admin"
-                            },
-                            {
-                                "Name": "CALC_PASSWORD",
-                                "Value": "password"
-                            },
-                            {
-                                "Name": "TIME_USERNAME",
-                                "Value": "admin"
-                            },
-                            {
-                                "Name": "TIME_PASSWORD",
-                                "Value": "password"
-                            }
                         ]
                     }
                 ]
