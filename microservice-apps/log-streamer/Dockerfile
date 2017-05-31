@@ -1,6 +1,6 @@
 FROM golang:1.6.3
 
-RUN go get go get github.com/gorilla/mux
+RUN go get github.com/gorilla/mux
 
 COPY src /go/src/github.com/mediamath/techsol/log-streamer
 
